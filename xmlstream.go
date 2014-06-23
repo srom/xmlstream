@@ -67,6 +67,9 @@ func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) (err er
 		maxRoutines = 2147483647 // max int32
 	}
 
+	// Wait for all the goroutines to complete before returning.
+	defer wg.Wait()
+
 	for {
 		// Read tokens from the XML document in a stream.
 		token, err := decoder.Token()
@@ -109,6 +112,5 @@ func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) (err er
 			}
 		}
 	}
-	wg.Wait()
 	return
 }
