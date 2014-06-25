@@ -114,4 +114,5 @@ Output:
 ## About & License
 
 Built by [Romain Strock](http://www.romainstrock.com) under London's ☀
+
 Released under the [MIT License](https://github.com/srom/xmlstream/blob/master/LICENSE).
