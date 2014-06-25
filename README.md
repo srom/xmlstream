@@ -1,6 +1,6 @@
 ## Overview
 
-XML stream parser for Golang built on top of the unmarshalling functions of encoding/xml.
+XML stream parser for Golang built on top of the unmarshalling functions of [encoding/xml](http://golang.org/pkg/encoding/xml/#Unmarshal).
 It keeps the flexibility of xml.Unmarshal while allowing the parsing of huge XML files.
 
 An arbitrary number of goroutines can be launched to handle the unmarshalled objects in parallel.
@@ -38,8 +38,7 @@ Say you want to parse the following XML file:
 </Person>
 ```
 
-Step 1 → Define your struct objects like you would usually do it to use xml.Unmarshal
-(http://golang.org/pkg/encoding/xml/#Unmarshal).
+Step 1 → Define your struct objects like you would usually do it to use [xml.Unmarshal](http://golang.org/pkg/encoding/xml/#Unmarshal).
 
 ```Go
 // Define a Person type.
