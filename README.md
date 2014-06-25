@@ -5,7 +5,7 @@ It keeps the flexibility of xml.Unmarshall while allowing the parsing of huge XM
 
 An arbitrary number of goroutines can be launched to handle the unmarshalled objects in parallel.
 
-⁂ Checkout the [documentation](http://godoc.org/github.com/srom/xmlstream).
+⟶ Checkout the [documentation](http://godoc.org/github.com/srom/xmlstream) ⟵
 
 ## Usage
 
