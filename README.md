@@ -113,6 +113,6 @@ Output:
 
 ## About & License
 
-Built by [Romain Strock](http://www.romainstrock.com) under London's ☀
+Built by [Romain Strock](http://www.romainstrock.com) under the ☀ of London.
 
 Released under the [MIT License](https://github.com/srom/xmlstream/blob/master/LICENSE).
