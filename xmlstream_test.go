@@ -119,7 +119,6 @@ func TestParseSequentially(t *testing.T) {
 	p, c := make([]Person, 0), make([]Cat, 0)
 	handler := TagHandler{p, c}
 
-	// Parse Sequentially.
 	err := Parse(bytes.NewReader(data), &handler, 0, Person{}, Cat{})
 
 	if err != nil {
@@ -135,7 +134,6 @@ func TestParseParallel1(t *testing.T) {
 	p, c := make([]Person, 0), make([]Cat, 0)
 	handler := TagHandler{p, c}
 
-	// Parse Sequentially.
 	err := Parse(bytes.NewReader(data), &handler, 1, Person{}, Cat{})
 
 	if err != nil {
@@ -151,7 +149,6 @@ func TestParseParallel2(t *testing.T) {
 	p, c := make([]Person, 0), make([]Cat, 0)
 	handler := TagHandler{p, c}
 
-	// Parse Sequentially.
 	err := Parse(bytes.NewReader(data), &handler, -1, Person{}, Cat{})
 
 	if err != nil {
