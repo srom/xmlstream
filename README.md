@@ -1,7 +1,7 @@
 ## Overview
 
 XML stream parser for Golang built on top of the unmarshalling functions of encoding/xml.
-It keeps the flexibility of xml.Unmarshall while allowing the parsing of huge XML files.
+It keeps the flexibility of xml.Unmarshal while allowing the parsing of huge XML files.
 
 An arbitrary number of goroutines can be launched to handle the unmarshalled objects in parallel.
 
@@ -60,7 +60,7 @@ type Cat struct {
 ```
 
 Step 2 → Implement the Tag interface for these objects by providing a method `TagName` which returns
-the name of the xml tag to consider (xml.Local.Name, a string) when starting to unmarshall an element.
+the name of the xml tag to consider (xml.Local.Name, a string) when starting to unmarshal an element.
 
 ```Go
 func (Person) TagName() string {
