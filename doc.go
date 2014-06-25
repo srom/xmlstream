@@ -1,6 +1,6 @@
 /*
 Package xmlstream implements an XML stream parser on top of the unmarshalling functions of encoding/xml.
-It keeps the flexibility of xml.Unmarshall while allowing the parsing of huge XML files.
+It keeps the flexibility of xml.Unmarshal while allowing the parsing of huge XML files.
 
 An arbitrary number of goroutines can be launched to handle the unmarshalled objects in parallel.
 
@@ -53,7 +53,7 @@ Step 1 → Define your struct objects like you would usually do it to use xml.Un
 	}
 
 Step 2 → Implement the Tag interface for these objects by providing a method `TagName` which returns
-the name of the xml tag to consider (xml.Local.Name, a string) when starting to unmarshall an element.
+the name of the xml tag to consider (xml.Local.Name, a string) when starting to unmarshal an element.
 
 	func (Person) TagName() string {
 		return "Person"
