@@ -75,7 +75,7 @@ func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) (err er
 		token, err := decoder.Token()
 		if err != nil {
 			if err == io.EOF {
-				// End of file. Expeted behavior.
+				// End of file. Expected behavior.
 				err = nil
 			}
 			break
