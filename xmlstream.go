@@ -13,8 +13,8 @@ import (
 // The method TagName should returns the local name of the XML element to
 // unmarshal.
 //
-// The struct implementing this interface are similar to those passed to
-// the function xml.Unmarshal (package encoding/xml).
+// The objects implementing this interface are similar to those passed to
+// the function xml.Unmarshal (http://golang.org/pkg/encoding/xml/#Unmarshal).
 type Tag interface {
 	TagName() string
 }
@@ -27,19 +27,19 @@ type Handler interface {
 	HandleTag(t interface{})
 }
 
-// Parse streams an XML file and unmarshals the xml elements it encounter as soon
-// as they match the tag name of one of the tags parameters. The unmarshalled tag
-// is then passed to the method HandleTag() of the handler.
+// Parse streams an XML file and unmarshals the xml elements it encounters as soon
+// as they match the tag name of one of the tags parameters. A pointer to the
+// unmarshalled tag is then passed to the method HandleTag` of the handler.
 //
-// If the parameter maxRoutines is equals to zero, HandleTag() is always called
-// sequentially. If this parameter is greater than zero, at most maxRoutines go
-// routines will be started. When no more go routines are available, the callback
+// If the parameter maxRoutines is equals to zero, `HandleTag` is always called
+// sequentially. If this parameter is greater than zero, at most maxRoutines
+// goroutines will be started. When no more goroutines are available, the callback
 // is called sequentially. If the parameter is negative, the parser will launch
-// as many go routines as needed. It is equivalent to set maxRoutines to the
-// maximal int32 value.
+// as many goroutines as needed. It is equivalent to set maxRoutines to the
+// maximum int32 value.
 func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) (err error) {
 	var (
-		// Number of go routines currently running.
+		// Number of goroutines currently running.
 		rRoutines int32 = 0
 
 		// Mapping between the xml local name and  the underlying type of a Tag.
@@ -62,7 +62,7 @@ func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) (err er
 
 	// Negative value for `maxRoutines` is equivalent of assigning it
 	// to the maximal int32 value. In other words, allow the parser
-	// to launch as many go routines as needed.
+	// to launch as many goroutines as needed.
 	if maxRoutines < 0 {
 		maxRoutines = 2147483647 // max int32
 	}
