@@ -37,7 +37,7 @@ type Handler interface {
 // is called sequentially. If the parameter is negative, the parser will launch
 // as many goroutines as needed. It is equivalent to set maxRoutines to the
 // maximum int32 value.
-func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) (err error) {
+func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) error {
 	var (
 		// Number of goroutines currently running.
 		rRoutines int32 = 0
@@ -78,7 +78,7 @@ func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) (err er
 				// End of file. Expected behavior.
 				err = nil
 			}
-			break
+			return err
 		}
 		// Inspect the type of the token just read.
 		switch el := token.(type) {
@@ -90,7 +90,7 @@ func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) (err er
 				// Decode a whole chunk of following XML.
 				err := decoder.DecodeElement(tag, &el)
 				if err != nil {
-					break
+					return err
 				}
 
 				// Do some stuff with the retrieved object...
@@ -112,5 +112,5 @@ func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) (err er
 			}
 		}
 	}
-	return
+	return nil
 }
