@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"io"
 	"reflect"
-	"sync"
 )
 
 // Tag is the interface implemented by the objects that can be unmarshalled
@@ -19,98 +18,64 @@ type Tag interface {
 	TagName() string
 }
 
-// Handler is the interface implemented by objects that can handle
-// the unmarshalled Tag passed as a parameter.
-//
-// Note that the parameter t is a pointer to the underlying Tag element.
-type Handler interface {
-	HandleTag(t interface{})
+type Scanner struct {
+	decoder    *xml.Decoder
+	tags       []Tag
+	latestTag  *Tag
+	nameToType map[string]reflect.Type // map xml local name to Tag's type
+	err        error
 }
 
-// Parse streams an XML file and unmarshals the xml elements it encounters as soon
-// as they match the tag name of one of the tags parameters. A pointer to the
-// unmarshalled tag is then passed to the method HandleTag` of the handler.
-//
-// If the parameter maxRoutines is equals to zero, `HandleTag` is always called
-// sequentially. If this parameter is greater than zero, at most maxRoutines
-// goroutines will be started. When no more goroutines are available, the callback
-// is called sequentially. If the parameter is negative, the parser will launch
-// as many goroutines as needed. It is equivalent to set maxRoutines to the
-// maximum int32 value.
-func Parse(r io.Reader, handler Handler, maxRoutines int32, tags ...Tag) error {
-	var (
-		// Number of goroutines currently running.
-		rRoutines int32 = 0
-
-		// Mapping between the xml local name and  the underlying type of a Tag.
-		nameToType map[string]reflect.Type = make(map[string]reflect.Type)
-
-		// XML decoder.
-		decoder *xml.Decoder = xml.NewDecoder(r)
-
-		// Waiting group used to wait for all the goroutines to finish.
-		// See http://golang.org/pkg/sync/#example_WaitGroup
-		wg sync.WaitGroup
-	)
+func NewScanner(r io.Reader, tags ...Tag) *Scanner {
+	s := Scanner{
+		decoder:    xml.NewDecoder(r),
+		tags:       tags,
+		nameToType: make(map[string]reflect.Type, len(tags)),
+	}
 
 	// Map the xml local name of a Tag to its underlying type.
-	nameToType = make(map[string]reflect.Type)
-	for _, tag := range tags {
+	for _, tag := range s.tags {
 		t := reflect.TypeOf(tag)
-		nameToType[tag.TagName()] = t
+		s.nameToType[tag.TagName()] = t
 	}
+	return &s
+}
 
-	// Negative value for `maxRoutines` is equivalent of assigning it
-	// to the maximal int32 value. In other words, allow the parser
-	// to launch as many goroutines as needed.
-	if maxRoutines < 0 {
-		maxRoutines = 2147483647 // max int32
+func (s *Scanner) Scan() bool {
+	if (*s).err != nil {
+		return false
 	}
-
-	// Wait for all the goroutines to complete before returning.
-	defer wg.Wait()
-
-	for {
-		// Read tokens from the XML document in a stream.
-		token, err := decoder.Token()
-		if err != nil {
-			if err == io.EOF {
-				// End of file. Expected behavior.
-				err = nil
-			}
-			return err
+	// Read next token.
+	token, err := (*s).decoder.Token()
+	if err != nil {
+		(*s).latestTag = nil
+		(*s).err = err
+		return false
+	}
+	// Inspect the type of the token.
+	switch el := token.(type) {
+	case xml.StartElement:
+		// Read the tag name and compare with the XML element.
+		if tagType, ok := (*s).nameToType[el.Name.Local]; ok {
+			// create a new tag
+			tag := reflect.New(tagType).Interface()
+			// Decode a whole chunk of following XML.
+			err := (*s).decoder.DecodeElement(tag, &el)
+			(*s).latestTag = nil
+			(*s).err = err
+			return err != nil
 		}
-		// Inspect the type of the token just read.
-		switch el := token.(type) {
-		case xml.StartElement:
-			// Read the tag name and compare with the XML element.
-			if tagType, ok := nameToType[el.Name.Local]; ok {
-				// create a new tag
-				tag := reflect.New(tagType).Interface()
-				// Decode a whole chunk of following XML.
-				err := decoder.DecodeElement(tag, &el)
-				if err != nil {
-					return err
-				}
+	}
+}
 
-				// Do some stuff with the retrieved object...
-				if rRoutines < maxRoutines {
-					// ...In parallel ツ
-					wg.Add(1)
-					rRoutines++
-					go func() {
-						defer func() {
-							wg.Done()
-							rRoutines--
-						}()
-						handler.HandleTag(tag)
-					}()
-				} else {
-					// ...Sequentially.
-					handler.HandleTag(tag)
-				}
-			}
-		}
+// Tag output a pointer to the next Tag.
+func (s *Scanner) Tag() *Tag {
+	return (*s).latestTag
+}
+
+func (s *Scanner) ReadErr() error {
+	if (*s).err != nil && (*s).err != io.EOF {
+		return (*s).err
 	}
 	return nil
 }
