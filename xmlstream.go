@@ -6,39 +6,43 @@ import (
 	"reflect"
 )
 
-// Tag is the interface implemented by the objects that can be unmarshalled
-// by the Parse function.
-//
-// The method TagName should returns the local name of the XML element to
-// unmarshal.
-//
-// The objects implementing this interface are similar to those passed to
-// the function xml.Unmarshal (http://golang.org/pkg/encoding/xml/#Unmarshal).
-type Tag interface {
-	TagName() string
-}
-
 type Scanner struct {
 	decoder    *xml.Decoder
-	tags       []Tag
-	latestTag  *Tag
-	nameToType map[string]reflect.Type // map xml local name to Tag's type
+	element    interface{}
+	nameToType map[string]reflect.Type // map xml local name to element's type
 	err        error
 }
 
-func NewScanner(r io.Reader, tags ...Tag) *Scanner {
+func NewScanner(r io.Reader, tags ...interface{}) *Scanner {
 	s := Scanner{
 		decoder:    xml.NewDecoder(r),
-		tags:       tags,
 		nameToType: make(map[string]reflect.Type, len(tags)),
 	}
 
-	// Map the xml local name of a Tag to its underlying type.
-	for _, tag := range s.tags {
-		t := reflect.TypeOf(tag)
-		s.nameToType[tag.TagName()] = t
+	// Map the xml local name of an element to its underlying type.
+	for _, tag := range tags {
+		v := reflect.ValueOf(tag)
+		t := v.Type()
+		name := getElementName(v)
+		s.nameToType[name] = t
 	}
 	return &s
+}
+
+func elementName(v reflect.Value) string {
+	t := v.Type()
+	name := t.Name()
+	if v.Kind() == reflect.Struct {
+		for i := 0; i < v.NumField(); i++ {
+			field := t.Field(i)
+			if field.Name == "XMLName" || field.Type.String() == "xml.Name" {
+				if field.Tag.Get("xml") != "" {
+					name = field.Tag.Get("xml")
+				}
+			}
+		}
+	}
+	return name
 }
 
 func (s *Scanner) Scan() bool {
@@ -48,20 +52,20 @@ func (s *Scanner) Scan() bool {
 	// Read next token.
 	token, err := (*s).decoder.Token()
 	if err != nil {
-		(*s).latestTag = nil
+		(*s).element = nil
 		(*s).err = err
 		return false
 	}
 	// Inspect the type of the token.
 	switch el := token.(type) {
 	case xml.StartElement:
-		// Read the tag name and compare with the XML element.
-		if tagType, ok := (*s).nameToType[el.Name.Local]; ok {
-			// create a new tag
-			tag := reflect.New(tagType).Interface()
+		// Read the element name and compare with the XML element.
+		if elementType, ok := (*s).nameToType[el.Name.Local]; ok {
+			// create a new element
+			element := reflect.New(elementType).Interface()
 			// Decode a whole chunk of following XML.
-			err := (*s).decoder.DecodeElement(tag, &el)
-			(*s).latestTag = nil
+			err := (*s).decoder.DecodeElement(element, &el)
+			(*s).element = element
 			(*s).err = err
 			return err != nil
 		}
@@ -69,8 +73,8 @@ func (s *Scanner) Scan() bool {
 }
 
 // Tag output a pointer to the next Tag.
-func (s *Scanner) Tag() *Tag {
-	return (*s).latestTag
+func (s *Scanner) Element() interface{} {
+	return (*s).element
 }
 
 func (s *Scanner) ReadErr() error {

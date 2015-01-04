@@ -1,10 +1,10 @@
 /*
-Package xmlstream implements an XML stream parser on top of the unmarshalling functions of encoding/xml.
+Package xmlstream implements a lightweight XML scanner on top of encoding/xml.
 It keeps the flexibility of xml.Unmarshal while allowing the parsing of huge XML files.
 
-An arbitrary number of goroutines can be launched to handle the unmarshalled objects in parallel.
-
 Usage
+
+It is very similar to bufio.Scanner:
 
 Say you want to parse the following XML file:
 
@@ -52,45 +52,26 @@ Step 1 → Define your struct objects like you would usually do it to use xml.Un
 		Breed string
 	}
 
-Step 2 → Implement the Tag interface for these objects by providing a method `TagName` which returns
-the name of the xml tag to consider (xml.Local.Name, a string) when starting to unmarshal an element.
+Step 2 → Create a new xmlstream.Scanner and iterate through it:
 
-	func (Person) TagName() string {
-		return "Person"
-	}
+	scanner := xmlstream.NewScanner(os.Stdin, Person{}, Cat{})
+	personCounter := 0
+	catCounter := 0
 
-	func (Cat) TagName() string {
-		return "Cat"
-	}
-
-Step 3 → Create a Handler object by implementing the method `HandleTag`; This method will be fed with
-the retrieved objects during parsing.
-
-	type TagHandler struct {
-		PersonCounter int32
-		CatCounter    int32
-	}
-
-	func (th *TagHandler) HandleTag(tag interface{}) {
-		// Note that `tag` is a pointer to the underlying Tag object.
+	for scanner.Scan() {
+		tag := scanner.Element()
 		switch el := tag.(type) {
 		case *Person:
 			person := *el
-			(*th).PersonCounter++
-			fmt.Printf("Human N°%d: %s, %s\n", (*th).PersonCounter, person.Name, person.Emails)
+			personCounter++
+			fmt.Printf("Human N°%d: %s, %s\n", personCounter, person.Name, person.Emails)
 
 		case *Cat:
 			cat := *el
-			(*th).CatCounter++
-			fmt.Printf("Cat N°%d: %s, %s\n", (*th).CatCounter, cat.Name, cat.Breed)
+			catCounter++
+			fmt.Printf("Cat N°%d: %s, %s\n", catCounter, cat.Name, cat.Breed)
 		}
 	}
-
-Step 4 → Call the parser.
-
-	// Parse the XML file by unmarshalling Person and Cat objects. Handle unmarshalled Person and
-	// Cat objects via the TagHandler. Use as many goroutines as needed.
-	err := xmlstream.Parse(xmlFile, &TagHandler{0, 0}, -1, Person{}, Cat{})
 
 Output:
 	Human N°1: Jon Arbuckle, [{home jon@example.com} {work jon@work.com}]
