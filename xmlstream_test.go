@@ -48,7 +48,7 @@ func ExampleScanner() {
 	}
 
 	// Create a scanner.
-	scanner := NewScanner(bytes.NewReader(data), Person{}, Cat{})
+	scanner := NewScanner(bytes.NewReader(data), new(Person), new(Cat))
 
 	// Iterate through it.
 	personCounter := 0
@@ -69,7 +69,7 @@ func ExampleScanner() {
 	}
 
 	// Check errors.
-	if err := scanner.ReadErr(); err != nil {
+	if err := scanner.Err(); err != nil {
 		fmt.Printf("Error while scanning XML: %v\n", err)
 	}
 

@@ -57,7 +57,7 @@ type Cat struct {
 Step 2 → Create a new xmlstream.Scanner and iterate through it:
 
 ```Go
-scanner := xmlstream.NewScanner(os.Stdin, Person{}, Cat{})
+scanner := xmlstream.NewScanner(os.Stdin, new(Person), new(Cat))
 
 personCounter := 0
 catCounter := 0
@@ -76,7 +76,7 @@ for scanner.Scan() {
   }
 }
 
-if err := scanner.ReadErr(); err != nil {
+if err := scanner.Err(); err != nil {
   t.Errorf("Error while scanning XML: %v\n", err)
 }
 ```
