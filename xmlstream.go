@@ -4,10 +4,12 @@ package xmlstream
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"reflect"
 )
 
+// Scanner provides a way to read a stream of XML data.
 type Scanner struct {
 	decoder    *xml.Decoder
 	element    interface{}
@@ -15,6 +17,9 @@ type Scanner struct {
 	err        error
 }
 
+// NewScanner returns a new Scanner to read from r.
+// Tags must be struct holding XML data as defined by encoding/xml:
+// http://golang.org/pkg/encoding/xml/#Unmarshal
 func NewScanner(r io.Reader, tags ...interface{}) *Scanner {
 	s := Scanner{
 		decoder:    xml.NewDecoder(r),
@@ -33,14 +38,15 @@ func NewScanner(r io.Reader, tags ...interface{}) *Scanner {
 
 func elementName(v reflect.Value) string {
 	t := v.Type()
+	if t.Kind() != reflect.Struct {
+		panic(fmt.Errorf("Tags must be of kind Struct but got %s", t.Kind()))
+	}
 	name := t.Name()
-	if v.Kind() == reflect.Struct {
-		for i := 0; i < v.NumField(); i++ {
-			field := t.Field(i)
-			if field.Name == "XMLName" || field.Type.String() == "xml.Name" {
-				if field.Tag.Get("xml") != "" {
-					name = field.Tag.Get("xml")
-				}
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		if field.Name == "XMLName" || field.Type.String() == "xml.Name" {
+			if field.Tag.Get("xml") != "" {
+				name = field.Tag.Get("xml")
 			}
 		}
 	}
@@ -77,7 +83,7 @@ func (s *Scanner) Scan() bool {
 	return false
 }
 
-// Tag output a pointer to the next Tag.
+// O
 func (s *Scanner) Element() interface{} {
 	return (*s).element
 }
