@@ -1,3 +1,5 @@
+// Package xmlstream implements a lightweight XML scanner on top of encoding/xml.
+// It keeps the flexibility of xml.Unmarshal while allowing the parsing of huge XML files.
 package xmlstream
 
 import (
@@ -23,7 +25,7 @@ func NewScanner(r io.Reader, tags ...interface{}) *Scanner {
 	for _, tag := range tags {
 		v := reflect.ValueOf(tag)
 		t := v.Type()
-		name := getElementName(v)
+		name := elementName(v)
 		s.nameToType[name] = t
 	}
 	return &s
@@ -49,27 +51,30 @@ func (s *Scanner) Scan() bool {
 	if (*s).err != nil {
 		return false
 	}
-	// Read next token.
-	token, err := (*s).decoder.Token()
-	if err != nil {
-		(*s).element = nil
-		(*s).err = err
-		return false
-	}
-	// Inspect the type of the token.
-	switch el := token.(type) {
-	case xml.StartElement:
-		// Read the element name and compare with the XML element.
-		if elementType, ok := (*s).nameToType[el.Name.Local]; ok {
-			// create a new element
-			element := reflect.New(elementType).Interface()
-			// Decode a whole chunk of following XML.
-			err := (*s).decoder.DecodeElement(element, &el)
-			(*s).element = element
+	for {
+		// Read next token.
+		token, err := (*s).decoder.Token()
+		if err != nil {
+			(*s).element = nil
 			(*s).err = err
-			return err != nil
+			return false
+		}
+		// Inspect the type of the token.
+		switch el := token.(type) {
+		case xml.StartElement:
+			// Read the element name and compare with the XML element.
+			if elementType, ok := (*s).nameToType[el.Name.Local]; ok {
+				// create a new element
+				element := reflect.New(elementType).Interface()
+				// Decode a whole chunk of following XML.
+				err := (*s).decoder.DecodeElement(element, &el)
+				(*s).element = element
+				(*s).err = err
+				return err == nil
+			}
 		}
 	}
+	return false
 }
 
 // Tag output a pointer to the next Tag.
