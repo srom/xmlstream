@@ -12,7 +12,7 @@ import (
 // Scanner provides a way to read a stream of XML data. It uses an xml.Decoder internally to step
 // through the XML elements of the stream.
 type Scanner struct {
-	decoder    *xml.Decoder
+	Decoder    *xml.Decoder
 	element    interface{}
 	nameToType map[string]reflect.Type // map xml local name to element's type
 	err        error
@@ -23,7 +23,7 @@ type Scanner struct {
 // http://golang.org/pkg/encoding/xml/#Unmarshal
 func NewScanner(r io.Reader, tags ...interface{}) *Scanner {
 	s := Scanner{
-		decoder:    xml.NewDecoder(r),
+		Decoder:    xml.NewDecoder(r),
 		nameToType: make(map[string]reflect.Type, len(tags)),
 	}
 
@@ -68,7 +68,7 @@ func (s *Scanner) Scan() bool {
 	}
 	for {
 		// Read next token.
-		token, err := (*s).decoder.Token()
+		token, err := (*s).Decoder.Token()
 		if err != nil {
 			(*s).element = nil
 			(*s).err = err
@@ -82,7 +82,7 @@ func (s *Scanner) Scan() bool {
 				// create a new element
 				element := reflect.New(elementType).Interface()
 				// Decode a whole chunk of following XML.
-				err := (*s).decoder.DecodeElement(element, &el)
+				err := (*s).Decoder.DecodeElement(element, &el)
 				(*s).element = element
 				(*s).err = err
 				return err == nil
